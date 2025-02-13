@@ -1,10 +1,17 @@
 ﻿using NLog;
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+
 string path = Directory.GetCurrentDirectory() + "//nlog.config";
 // create instance of Logger
 var logger = LogManager.Setup().LoadConfigurationFromFile(path).GetCurrentClassLogger();
 logger.Info("Program started");
+
 string file = "mario.csv";
-// make sure movie file exists
+
+// Make sure file exists
 if (!File.Exists(file))
 {
     logger.Error("File does not exist: {File}", file);
@@ -13,35 +20,30 @@ else
 {
     List<UInt64> Ids = [];
     List<string> Names = [];
-    List<string> Descriptions = [];
-    List<string> Species = [];
-    List<string> FirstAppearance = [];
-    List<UInt64> YearCreated = [];
-    // to populate the lists with data, read from the data file
+    List<string?> Descriptions = [];
+    List<string> SpeciesList = [];  // Renamed from "Species" to avoid conflict
+    List<string> FirstAppearanceList = [];  // Renamed from "FirstAppearance" to avoid conflict
+    List<UInt64> YearCreatedList = [];  // Renamed from "YearCreated" to avoid conflict
+
+    // Read file and populate lists
     try
     {
         StreamReader sr = new(file);
-        // first line contains column headers
-        sr.ReadLine();
+        sr.ReadLine(); // Skip header
+
         while (!sr.EndOfStream)
         {
             string? line = sr.ReadLine();
             if (line is not null)
             {
-                // character details are separated with comma(,)
                 string[] characterDetails = line.Split(',');
-                // 1st array element contains id
+
                 Ids.Add(UInt64.Parse(characterDetails[0]));
-                // 2nd array element contains character name
                 Names.Add(characterDetails[1]);
-                // 3rd array element contains character description
                 Descriptions.Add(characterDetails[2]);
-                // 4th array element contains character species
-                Species.Add(characterDetails[3]);
-                // 5th array element contains characters First Appearance
-                FirstAppearance.Add(characterDetails[4]);
-                // 6th array element contains the year the character was created
-                YearCreated.Add(UInt64.Parse(characterDetails[5]));
+                SpeciesList.Add(characterDetails[3]);  // Use renamed variable
+                FirstAppearanceList.Add(characterDetails[4]);  // Use renamed variable
+                YearCreatedList.Add(UInt64.Parse(characterDetails[5]));  // Use renamed variable
             }
         }
         sr.Close();
@@ -50,54 +52,87 @@ else
     {
         logger.Error(ex.Message);
     }
- string? choice;
+
+    string? choice;
     do
     {
-        // display choices to user
-        Console.WriteLine("1) Add Character");
+        Console.WriteLine("\n1) Add Character");
         Console.WriteLine("2) Display All Characters");
         Console.WriteLine("Enter to quit");
-        // input selection
+
         choice = Console.ReadLine();
         logger.Info("User choice: {Choice}", choice);
+
         if (choice == "1")
         {
-            // Add Character
-            Console.WriteLine("Enter new character name: ");
-            string? Name = Console.ReadLine();
-            if (!string.IsNullOrEmpty(Name)){
-                // check for duplicate name
-                List<string> LowerCaseNames = Names.ConvertAll(n => n.ToLower());
-                if (LowerCaseNames.Contains(Name.ToLower()))
+            Console.Write("Enter new character name: ");
+            string? name = Console.ReadLine();
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                List<string> lowerCaseNames = Names.ConvertAll(n => n.ToLower());
+                if (lowerCaseNames.Contains(name.ToLower()))
                 {
-                    logger.Info($"Duplicate name {Name}");
+                    logger.Info($"Duplicate name {name}");
                 }
                 else
                 {
-                    // generate id - use max value in Ids + 1
-                    UInt64 Id = Ids.Max() + 1;
-                    Console.WriteLine($"{Id}, {Name}");
+                    UInt64 id = Ids.Max() + 1;
+
+                    Console.Write("Enter description: ");
+                    string? description = Console.ReadLine();
+                    Console.Write("Enter species: ");
+                    string? species = Console.ReadLine();
+                    Console.Write("Enter first appearance: ");
+                    string? firstAppearance = Console.ReadLine();
+                    
+                    Console.Write("Enter the year the character was created: ");
+                    string? yearCreatedInput = Console.ReadLine();
+                    UInt64 yearCreated;
+                    
+                    if (UInt64.TryParse(yearCreatedInput, out yearCreated))
+                    {
+                        Ids.Add(id);
+                        Names.Add(name);
+                        Descriptions.Add(description);
+                        SpeciesList.Add(species);
+                        FirstAppearanceList.Add(firstAppearance);
+                        YearCreatedList.Add(yearCreated);
+
+                        using (StreamWriter sw = File.AppendText(file))
+                        {
+                            sw.WriteLine($"{id},{name},{description},{species},{firstAppearance},{yearCreated}");
+                        }
+
+                        Console.WriteLine("Character added successfully!");
+                        logger.Info($"Added character: {id}, {name}, {description}, {species}, {firstAppearance}, {yearCreated}");
+                    }
+                    else
+                    {
+                        logger.Error("Invalid year input. Must be a number.");
+                    }
                 }
-            } else {
-                logger.Error("You must enter a name");
+            }
+            else
+            {
+                logger.Error("You must enter a name.");
             }
         }
         else if (choice == "2")
         {
-            // Display All Characters
-            // loop thru Lists
+            // Display all characters
             for (int i = 0; i < Ids.Count; i++)
             {
-                // display character details
                 Console.WriteLine($"Id: {Ids[i]}");
                 Console.WriteLine($"Name: {Names[i]}");
                 Console.WriteLine($"Description: {Descriptions[i]}");
-                Console.WriteLine($"Species:  {Species[i]}");
-                Console.WriteLine($"First Appearance:  {FirstAppearance[i]}");
-                Console.WriteLine($"Year Created:  {YearCreated[i]}");
+                Console.WriteLine($"Species: {SpeciesList[i]}");  // Use renamed variable
+                Console.WriteLine($"First Appearance: {FirstAppearanceList[i]}");  // Use renamed variable
+                Console.WriteLine($"Year Created: {YearCreatedList[i]}");  // Use renamed variable
                 Console.WriteLine("");
             }
         }
     } while (choice == "1" || choice == "2");
 }
-logger.Info("Program ended");
+
+logger.Info("Program ended.");
