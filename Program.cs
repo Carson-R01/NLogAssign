@@ -63,11 +63,20 @@ else
         if (choice == "1")
         {
             // Add Character
+            Console.WriteLine("Enter new character name: ");
+            string? Name = Console.ReadLine();
+            if (!string.IsNullOrEmpty(Name)){
+                // generate id - use max value in Ids + 1
+                UInt64 Id = Ids.Max() + 1;
+                Console.WriteLine($"{Id}, {Name}");
+            } else {
+                logger.Error("You must enter a name");
+            }
         }
         else if (choice == "2")
         {
             // Display All Characters
-                        // loop thru Lists
+            // loop thru Lists
             for (int i = 0; i < Ids.Count; i++)
             {
                 // display character details
