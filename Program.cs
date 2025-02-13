@@ -11,6 +11,12 @@ if (!File.Exists(file))
 }
 else
 {
+    List<UInt64> Ids = [];
+    List<string> Names = [];
+    List<string> Descriptions = [];
+    List<string> Species = [];
+    List<string> First-appearance = [];
+    List<Uint64> Year-created = [];
  string? choice;
     do
     {
